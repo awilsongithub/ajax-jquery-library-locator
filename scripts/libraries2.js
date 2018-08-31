@@ -79,7 +79,7 @@ function displayData(){
     for (var i = 0; i < libs.length; i++) {
        if (selected == libs[i].community_area) {
 
-         let listItem = "<div class='list-item'><em>" + libs[i].community_area + "LIBRARY</em><br></div><li>" + libs[i].address + "</li>";
+         let listItem = "<div class='list-item'><em>" + libs[i].community_area + " LIBRARY</em><br><span>" + libs[i].address + "</span></div>";
           $('.results-list').append(listItem);
 
           setMarker(libs[i].latitude, libs[i].longitude);
