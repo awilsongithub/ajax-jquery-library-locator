@@ -1,39 +1,14 @@
-/*
-===============================================================
-//  WHAT THIS FILE DOES:
-//  1. GETS DATA WITH AN AJAX CALL TO API
-//  2. WHICH LISTS DATA MATCHING USER INPUT
-//  2. INITIALIZES A MAP ONTO THE DOM
-//  3. SETS MARKERS ONTO MAP USING API DATA
-===========================================================+====
-*/
 
-/*
-TODO problem:  prompt blocks page load
-current order of execution
-get DATA
-log data
-prompt ..........
-append heading
-append filtered data
-set markers
-initialize the map onto page
-*/
-
-var mapCanvas, mapOptions, map, searchVariable, libraries;
+var mapCanvas, mapOptions, map, libs;
 
 $(document).ready(function() {
   initMap();
-
-  $.ajax(getDataApendMatches);
-
+  $.ajax(getData);
   $("#locateButton").click(function(){
     displayData();
   });
-
 });
 
-/* initialize the map with a constructor */
 function initMap() {
     mapCanvas = document.getElementById('map-canvas');
     mapOptions = {
@@ -42,6 +17,44 @@ function initMap() {
         mapTypeId: google.maps.MapTypeId.ROADMAP
     };
     map = new google.maps.Map(mapCanvas, mapOptions);
+}
+
+var getData = {
+   type: 'get',
+   url: 'https://data.cityofchicago.org/resource/dip3-ud6z.json',
+   success: function(data){
+     console.log(data);
+     libs = data;
+     initLibs(data);
+   },
+   error: function() { console.log('ajax error'); }
+};
+
+function initLibs(data){
+  populateDropdown(data);
+  setAllMarkers(data);
+}
+
+function populateDropdown(libs){
+  let uniqueCommunities = ['SHOW ALL'];
+  // filter
+  $.each(libs, function(index, library){
+    if( $.inArray(library.community_area, uniqueCommunities) == -1){
+      uniqueCommunities.push(library.community_area);
+    }
+  });
+
+  // populate
+  $.each(uniqueCommunities, function(index, community){
+    let option = `<option value='${community}'>${community}</option>`;
+    $('.community-dropdown').append(option);
+  });
+}
+
+function setAllMarkers(data){
+  libs.forEach(function(library){
+    setMarker(library.latitude, library.longitude);
+  });
 }
 
 function setMarker (lat, long) {
@@ -54,65 +67,24 @@ function setMarker (lat, long) {
     });
 }
 
-function populateDropdown(libraries){
-  let uniqueCommunities = ['SHOW ALL'];
-
-  $.each(libraries, function(index, library){
-    if( $.inArray(library.community_area, uniqueCommunities) == -1){
-      uniqueCommunities.push(library.community_area);
-    }
-  });
-
-  $.each(uniqueCommunities, function(index, community){
-    let option = `<option value='${community}'>${community}</option>`;
-    $('.community-dropdown').append(option);
-  });
-}
-
-function appendMatches(data){
-  libraries = data; // make available globally
-  console.log(libraries);
-
-  populateDropdown(data);
-
-  if(searchVariable){
-    var community = searchVariable.toUpperCase();
-    var heading = '<h3>Libraries in ' + community + ':</h3>';
-    $('.results-list').append(heading);
-  }
-
-  libraries.forEach(function(library){
-    setMarker(library.latitude, library.longitude);
-  });
-}
-
-var getDataApendMatches = {
-   type: 'get',
-   url: 'https://data.cityofchicago.org/resource/dip3-ud6z.json',
-   success: function(data){ appendMatches(data) },
-   error: function() { console.log('ajax error'); }
-};
-
-
 function displayData(){
-  let selectedCommunity = $('#community-select').val();
+  let selected = $('#community-select').val();
 
   $('.results-list').empty();
   initMap();
 
-  // if selected is all set all markers
-  if (selectedCommunity === 'SHOW ALL'){
-    $.each(libraries, function(index, library){
-      setMarker(library.latitude, library.longitude);
-    })
+  if (selected === 'SHOW ALL'){
+    setAllMarkers(libs);
   } else {
-    for (var i = 0; i < libraries.length; i++) {
-       if (selectedCommunity == libraries[i].community_area) {
-          $('.results-list').append('<li>' + libraries[i].address + '</li>');
-          setMarker(libraries[i].latitude, libraries[i].longitude);
+    for (var i = 0; i < libs.length; i++) {
+       if (selected == libs[i].community_area) {
+
+         let listItem = "<div class='list-item'><em>" + libs[i].community_area + "LIBRARY</em><br></div><li>" + libs[i].address + "</li>";
+          $('.results-list').append(listItem);
+
+          setMarker(libs[i].latitude, libs[i].longitude);
        }
      }
   }
-
 
 }
